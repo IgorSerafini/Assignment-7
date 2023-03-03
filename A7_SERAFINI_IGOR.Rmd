@@ -1,0 +1,237 @@
+---
+title: "Assignemnt_7"
+author: "Igor Serafini"
+date: "2023-03-03"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Assignment 7
+
+github: 
+
+(My Github)[https://github.com/IgorSerafini/Assignment-7]
+
+Loading packages
+```{r}
+library(ape)
+library(dplyr) 
+library(ggplot2)
+library(ggtree)
+```
+
+
+Definining Traits 
+```{r}
+XDragon75XX <- c("0", "1", "0", "0", "1", "1", "1", "0", "0", "1", "1", "1", "1", "0", "0", "0", "0", "1", "1",
+"0", "0", "1", "0", "1", "1", "1", "1", "1", "1", "1", "0", "0", "0", "0", "1", "1", "0", "1",
+"0", "0", "0", "0", "1", "1", "1", "1", "1", "1", "0", "0", "0", "0", "0", "1", "1", "1", "0",
+"0", "0", "0", "1", "0", "0", "0", "1", "0", "0", "1", "0", "0", "0", "0", "0", "0", "0", "1",
+"1", "1")
+
+XDragon76XX <- c("0", "1", "0", "0", "1", "1", "1", "0", "0", "1", "1", "1", "1", "0", "1", "0", "0", "1", "1",
+"0", "0", "1", "0", "1", "1", "1", "1", "1", "1", "1", "0", "0", "0", "0", "1", "1", "0", "1",
+"1", "0", "0", "0", "1", "1", "1", "1", "1", "1", "0", "0", "0", "0", "1", "1", "1", "1", "0",
+"1", "0", "0", "1", "0", "0", "1", "1", "0", "0", "1", "0", "0", "0", "1", "0", "0", "0", "1",
+"1", "1")
+
+XDragon77XX <- c("0", "1", "0", "0", "1", "1", "0", "0", "0", "1", "1", "1", "1", "0", "0", "0", "0", "1", "1",
+"0", "0", "1", "0", "1", "1", "1", "1", "1", "1", "1", "0", "0", "0", "0", "1", "1", "0", "1",
+"0", "0", "0", "1", "1", "1", "1", "1", "1", "1", "0", "0", "0", "1", "0", "1", "1", "1", "0",
+"0", "0", "0", "1", "0", "0", "0", "1", "1", "0", "1", "0", "1", "1", "0", "1", "0", "0", "1",
+"1", "1")
+
+Dragons <- data.frame(XDragon75XX, XDragon76XX, XDragon77XX)
+```
+
+Defining DragonNexus
+```{r}
+DragonNexus1 <- read.nexus.data("DragonMatrix.nex")
+```
+
+
+3. 
+Code appending Dragon information with nexus dataset
+```{r}
+new_nexus_df <- data.frame(DragonNexus1, Dragons)
+
+dir.create("input")  
+
+write.csv(new_nexus_df, file = "input/nexus_updated.csv", row.names = FALSE)
+
+```
+
+Checking input folder
+```{r}
+input <- read.csv("nexus_updated.csv", colClasses = "character") 
+```
+
+4.
+Applying weigths
+```{r}
+WeightsDat <- read.csv("Weights.csv")
+```
+
+Single vector for weigths
+```{r}
+Weigths<- paste0(WeightsDat$Weight, collapse = "")
+Weigths<- strsplit(Weigths, split= "")[[1]]
+```
+
+Converting each letter to a value
+```{r}
+WeigthsNum<- rep(NA, length(Weigths))
+for(i in 1:length(WeigthsNum)){
+  if(Weigths[i] %in% LETTERS){
+    WeigthsNum[i]<- which(LETTERS==Weigths[i])+9
+  }else{
+    WeigthsNum[i]<- Weigths[i]
+  }
+}
+
+WeigthsNum<- as.numeric(WeigthsNum)
+```
+
+```{r}
+length(WeigthsNum)
+```
+
+4. Integrate trait value and weight 
+```{r}
+WtDragonNexus <- input
+for(i in 1:length(input)){
+  RepWeight<- input[[i]]==1
+  WtDragonNexus[[i]][RepWeight] <- WeigthsNum[RepWeight]
+  RepWeight <- NA
+}
+```
+
+
+Calculating our distance matrix  with weights 
+```{r}
+WtDragonNexusDF <- data.frame(matrix(unlist(WtDragonNexus), ncol= 78, byrow = T))
+
+row.names(WtDragonNexusDF)<- names(input)
+```
+
+
+Calculating distance of Matrix
+```{r}
+WtDragonDist <- dist(WtDragonNexusDF, method= 'euclidean')
+
+WtDragonDistM <- as.matrix(WtDragonDist) 
+```
+5. Dragon choices, and citing original sources 
+
+Dragon. 1:
+
+(Art and Animations of Chris Scalf)[https://www.youtube.com/watch?v=jha8hyfodco]
+
+Dragon. 2: 
+(Amazing Drawings Of Dragons)[https://proper-cooking.info/amazing-drawings-of-dragons]
+
+Dragon. 3: 
+(Creator Nightlife)[https://creator.nightcafe.studio/creation/GA3IPW177LBk9IAZxbTx]`
+
+
+6. 
+Visualizing phylogeny 
+
+Producing ggtree
+```{r}
+library(reshape2)
+
+Dat<- melt(WtDragonDistM)
+ ggplot(data= Dat, aes(x=Var1, y=Var2, fill=value)) +
+  geom_tile() + 
+  scale_fill_gradientn(colours=c("white", "blue", "green", "red")) + 
+  theme(axis.text.x = element_text(angle=90, hjust= 0.1, vjust= 0.5)) + labs(title = "Distance Matrix Plot")
+
+```
+
+
+
+Heatmap between var1 and var2:
+
+The three Dragon types can be found in the upper y-axis postion and the left most x-axis. In this context, when analyzing the correlation between other dragons and the selected dragons, we find the following to be true: 
+
+1. High correlation value amongst 3 dragons and the Fish
+2. Mild to low correlation amongst the selected Dragons, Dragon1- Dragon2,3 = low
+3. Two correlation clusters, 1) amongst Dragon3,2 and Turkish 2) amongst Dragon1,2,3 and Japanese.
+
+
+
+Plotting tree for enhanced visulization
+```{r}
+WtDragonTree<- fastme.bal(WtDragonDist)
+WtDragonTreeNJ<- nj(WtDragonDist)
+ggtree(WtDragonTree, layout="circular") + geom_tiplab()
+```
+
+
+
+```{r}
+ggtree(WtDragonTreeNJ, layout= "circular") + geom_tiplab()
+```
+#Note, we find a dense cluster amongst species closer to the ancestral root
+
+
+Tree formating 
+```{r}
+str(WtDragonTreeNJ)
+```
+Colouring by OTU
+Note, this will work for Dragons since the regex only removes the numeric vlaues or periods 
+```{r}
+Country <- gsub("[^[:alpha:]]", "", gsub("X", "", WtDragonTree$tip.label))
+```
+
+Grouping using Split
+```{r}
+CountryGroups <- split(WtDragonTree$tip.label, Country)
+```
+
+GroupOTU function alllows for plotting of the grouping information
+```{r}
+Wdt <- groupOTU(WtDragonTree, CountryGroups)
+str(Wdt) 
+```
+
+
+Plotting ggtree containing group attribute for country
+```{r}
+ggtree(Wdt, layout= "circular", aes(colour= group)) +
+  geom_tiplab(size=2, aes(angle=angle))  + labs(title= "Group Attribute per Country", caption= "Phylogenic tree of different Country group including the introduced Dragons")
+```
+Here we can determine a recent ancesteral lineage for the 3 Dragons
+
+By Clade: 
+```{r}
+WtDTclade <- groupClade(WtDragonTree, .node= c(148, 131, 106, 93, 83))
+ggtree(WtDTclade, layout="circular", aes(colour= group)) +
+  geom_cladelabel(node= 148, label= "Serpentidae", 
+                  hjust=0.5, offset.text= 12, 
+                  fontsize= 3, angle= -45) +
+  geom_cladelabel(node= 131, label= "Wyvernidae", 
+                  hjust=0.5, offset.text= 4, 
+                  fontsize= 3, angle= 15) +
+  geom_cladelabel(node= 106, label= "Orientalia", 
+                  hjust=0.5, offset.text= 4, 
+                  fontsize= 3, angle= 40) +
+  geom_cladelabel(node= 93, label= "Dracopteronidae", 
+                  hjust=0.5, offset.text= 4, 
+                  fontsize= 3, angle= -55) +
+  geom_cladelabel(node= 83, label= "Dracoverisidae", 
+                  hjust=0.5, offset.text= 6, 
+                  fontsize= 3, angle= 55) +
+  xlim(NA, 60) + labs(title= "Recent ancestral Lineage")
+  
+```
+From this figure we can determine that Dragons belong to the Wyvernidae clade. Following further analysis we  find that the Dragon groups are closely related to German ref 1, which has 4 legs, lacks wikers, elongated body type, with bat like wings and Smooth Skin-Face characters that are coherent with the selected Dragons. 
+
+The Dragons are closely associated, sharing a recent commmon ancestor, furthermore, the dragons demonstrate close phylogeny to the Serpentidae clade. This is consistent with the current body of literature, which suggests that the teeth type trait was a defining characteristic between the Two clades. Such that, Wyvernidae express blunt teeth while, Serpentidae espress more pointy awkwardly shaped teeth.
